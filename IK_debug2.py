@@ -63,144 +63,164 @@ def test_code(test_case):
     ## 
 
     ## Insert IK code here!
-    #DH Param
-    #offset
-    d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
-    #length
-    a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
-    #twist
-    alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7')
+#print('assigning DH parameters')
 
-    #Joints
+    d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8') # link offset
+
+    a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7') # link length
+
+    alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7') # twist angle
+
+    # joint angle symbols
+
     q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
 
-    #KR210 Forward Kinematics
-    DH = { 
-		  alpha0:    0,  a0:     0, d1: 0.75, q1:          q1,
-		  alpha1:-pi/2., a1:  0.35, d2:    0, q2: -pi/2. + q2,
-		  alpha2:    0,  a2:  1.25, d3:    0, q3:          q3,
-		  alpha3:-pi/2., a3:-0.054, d4:  1.5, q4:          q4,
-		  alpha4: pi/2,  a4:     0, d5:    0, q5:          q5,
-		  alpha5:-pi/2., a5:     0, d6:    0, q6:          q6,
-		  alpha6:    0,  a6:     0, d7:0.303, q7:           0
-          }
+#    print 'DH parameters assigned'
+
+#    print 'Created DH Table'
+
+    # Modified DH params
+
+    DH_Table = {alpha0: 0, 	a0: 0, 		d1: 0.75, 	q1: q1,
+		alpha1: -pi/2., a1: 0.35,	d2: 0, 		q2: -pi/2. + q2,
+		alpha2: 0, 	a2: 1.25, 	d3: 0, 		q3: q3,
+		alpha3: -pi/2., a3: -0.054, 	d4: 1.5, 	q4: q4,
+		alpha4: pi/2, 	a4: 0, 		d5: 0, 		q5: q5,
+		alpha5: -pi/2., a5: 0, 		d6: 0, 		q6: q6,
+		alpha6: 0, 	a6: 0, 		d7: 0.303, 	q7: 0}
+
+#    print 'DH Table Created'
+
+    # define modified DH transformation matrix
+
+#    print 'Creating TF Matrix'
 
     def TF_Matrix(alpha, a, d, q):
 	TF = Matrix([
-			[           cos(q),           -sin(q),           0,             a],
-			[sin(q)*cos(alpha), cos(q)*cos(alpha), -sin(alpha), -sin(alpha)*d],
-			[sin(q)*sin(alpha), cos(q)*sin(alpha),  cos(alpha),  cos(alpha)*d],
-			[                0,                 0,           0,             1]
-		    ])
-	return TF
+			[cos(q), 		-sin(q), 		0, 		a],
+	     		[sin(q)*cos(alpha), 	cos(q)*cos(alpha), 	-sin(alpha), 	-sin(alpha)*d],
+	     		[sin(q)* sin(alpha), 	cos(q)*sin(alpha), 	cos(alpha), 	cos(alpha)*d],
+	     		[0,			0,			0,		1]
+		   ])
+  	return TF
 
-    T0_1 = TF_Matrix(alpha0, a0, d1, q1).subs(DH)
-    T1_2 = TF_Matrix(alpha1, a1, d2, q2).subs(DH)
-    T2_3 = TF_Matrix(alpha2, a2, d3, q3).subs(DH)
-    T3_4 = TF_Matrix(alpha3, a3, d4, q4).subs(DH)
-    T4_5 = TF_Matrix(alpha4, a4, d5, q5).subs(DH)
-    T5_6 = TF_Matrix(alpha5, a5, d6, q6).subs(DH)
-    T6_EE = TF_Matrix(alpha6, a6, d7, q7).subs(DH)
+#    print 'applying transforms'
 
-    #Transformation Matrix from Base Link to End Effector
+    T0_1 = TF_Matrix(alpha0, a0, d1, q1).subs(DH_Table)
+    T1_2 = TF_Matrix(alpha1, a1, d2, q2).subs(DH_Table)
+    T2_3 = TF_Matrix(alpha2, a2, d3, q3).subs(DH_Table)
+    T3_4 = TF_Matrix(alpha3, a3, d4, q4).subs(DH_Table)
+    T4_5 = TF_Matrix(alpha4, a4, d5, q5).subs(DH_Table)
+    T5_6 = TF_Matrix(alpha5, a5, d6, q6).subs(DH_Table)
+    T6_EE = TF_Matrix(alpha6, a6, d7, q7).subs(DH_Table)
+
     T0_EE = T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_EE
 
-    #End Effector Position
-    pose_x = req.poses[x].position.x
-    pose_y = req.poses[x].position.y
-    pose_z = req.poses[x].position.z
+#    print 'transforms applied'
+
+    # Extract end-effector position and orientation from request
+    # px, py, pz = end-effector position
+    # roll, pitch, yaw = end-effector orientation
+
+#    print 'applying end effector position and orientation'
+
+    px = req.poses[x].position.x
+    py = req.poses[x].position.y
+    pz = req.poses[x].position.z
     print('pose_x',req.poses[x].position.x)
     print('pose_y',req.poses[x].position.y)
     print('pose_z',req.poses[x].position.z)
 
-    #End Effector Orientation
     (roll, pitch, yaw) = tf.transformations.euler_from_quaternion([
-								req.poses[x].orientation.x,
-								req.poses[x].orientation.y,
-								req.poses[x].orientation.z,
-								req.poses[x].orientation.w
-								])
+			req.poses[x].orientation.x, req.poses[x].orientation.y,
+			req.poses[x].orientation.z, req.poses[x].orientation.w])
+
     print('orient_x',req.poses[x].orientation.x)
     print('orient_y',req.poses[x].orientation.y)
     print('orient_z',req.poses[x].orientation.z)
     print('orient_w',req.poses[x].orientation.w)
-    r, p, y = symbols('r p y')
-    
-    #Roll Rotation
-    rotation_x = Matrix([
-			 [1,      0,       0],
-			 [0, cos(r), -sin(r)],
-			 [0, sin(r),  cos(r)]
-		       ])
-    #Pitch Rotation
-    rotation_y = Matrix([
-                         [ cos(p), 0, sin(p)],
-                         [      0, 1,      0],
-                         [-sin(p), 0, cos(p)]
-                       ])
-    #Yaw Rotation
-    rotation_z = Matrix([
-                         [cos(y), -sin(y), 0],
-                         [sin(y),  cos(y), 0],
-                         [     0,       0, 1]
-                       ])
 
-    #Rotation End Effector
-    rotation_EE = rotation_z * rotation_y * rotation_x
-    print('ROT_EE1',rotation_EE)
-    rotation_error = rotation_z.subs(y, radians(180)) * rotation_y.subs(p, radians(-90))
-    print('ROT_Err',rotation_error)
+#    print 'end effector position and orientation applied'
 
-    rotation_EE = rotation_EE * rotation_error
-    print('ROT_EE2',rotation_EE)
-    rotation_EE = rotation_EE.subs({'r': roll, 'p': pitch, 'y': yaw})
-    print('ROT_EE3',rotation_EE)
+    # Find EE rotation matrix
+    # Define RPY roation matrices
+    # http://planning.cs.uiuc.edu/node102.html
 
-    #End Effector Matrix
-    EE_matrix = Matrix([[pose_x], [pose_y], [pose_z]])
-    print('EE_matrix:',EE_matrix)
-    wrist_center = EE_matrix - (0.303) * rotation_EE[:,2]
-    print('WC',wrist_center)
-    #Side and Angles
-    s_a = 1.501
-    s_b = sqrt(pow((sqrt(wrist_center[0] * wrist_center[0] + wrist_center[1] * wrist_center[1]) - 0.35),2)
-		 + pow((wrist_center[2] - 0.75),2))
-    s_c = 1.25
+#    print 'applying EE rotation matrix'
 
-    #Angles
-    a_a = acos((s_b * s_b + s_c * s_c - s_a * s_a) / (2 * s_b * s_c))
-    a_b = acos((s_a * s_a + s_c * s_c - s_b * s_b) / (2 * s_a * s_c))
-    a_c = acos((s_a * s_a + s_b * s_b - s_c * s_c) / (2 * s_a * s_b))
+    r, p , y = symbols('r p y')
 
-    #Joint Angles
-    theta1 = atan2(wrist_center[1], wrist_center[0])
-    theta2 = pi / 2 - a_a - atan2(wrist_center[2] - 0.75, sqrt(wrist_center[0] * wrist_center[0] +
-                                                                wrist_center[1] * wrist_center[1]) - 0.35)
-    theta3 = pi /2 - (a_b + 0.036)
+    ROT_x = Matrix([
+		[1, 	0 , 		0],
+		[0, 	cos(r), 	-sin(r)],
+   		[0, 	sin(r), 	cos(r)]]) # ROLL
 
-    #Calculate rotation from 0 to 3
+    ROT_y = Matrix([
+		[cos(p), 	0 , 	sin(p)],
+		[0, 		1, 	0],
+   		[-sin(p), 	0, 	cos(p)]]) # PITCH (CHANGED!)
+
+    ROT_z = Matrix([
+		[cos(y), 	-sin(y), 	0],
+		[sin(y), 	cos(y), 	0],
+		[0, 		0, 		1]]) # YAW
+
+    ROT_EE = ROT_z * ROT_y * ROT_x
+    print('ROT_EE1',ROT_EE)
+    Rot_Error = ROT_z.subs(y, radians(180)) * ROT_y.subs(p, radians(-90))
+    print('ROT_Err',Rot_Error)
+
+    ROT_EE = ROT_EE * Rot_Error
+    print('ROT_EE2',ROT_EE)
+    ROT_EE = ROT_EE.subs({'r': roll, 'p': pitch, 'y': yaw})
+    print('ROT_EE3',ROT_EE)
+    EE = Matrix([[px], [py], [pz]])
+    print('EE_matrix:',EE)
+#    print 'EE rotation matrix applied'
+
+    WC = EE - (0.303) * ROT_EE[:,2]
+    print('WC',WC)
+    theta1 = atan2(WC[1], WC[0])
+
+#    print 'theta 1 calculated'
+
+    # SSS triangle for theta2 and theta3
+
+    side_a = 1.501
+    side_b = sqrt(pow(sqrt(WC[0] * WC[0] + WC[1] * WC[1]) - 0.35, 2) + pow((WC[2] - 0.75), 2)) #CHANGED!!!
+
+    side_c = 1.25
+
+    angle_a = acos((side_b * side_b + side_c * side_c - side_a * side_a) / (2 * side_b * side_c))
+    angle_b = acos((side_a * side_a + side_c * side_c - side_b * side_b) / (2 * side_a * side_c))
+    angle_c = acos((side_a * side_a + side_b * side_b - side_c * side_c ) / (2 * side_a * side_b))
+
+    theta2 = pi/2. - angle_a - atan2(WC[2] - 0.75, sqrt(WC[0] * WC[0] + WC[1] * WC[1]) - 0.35) #(CHANGED!!!)
+    theta3 = pi/2. - (angle_b + 0.036) # 0.036 accounts for sag in link4 of -0.054m
+ 
+#    print 'theta 2 and 3 calculated'
+
     print('T0_1:',T0_1[0:3,0:3])
     print('T1_2:',T1_2[0:3,0:3])
     print('T2_3:',T2_3[0:3,0:3])
-    r0_3 = T0_1[0:3,0:3] * T1_2[0:3,0:3] * T2_3[0:3,0:3]
-    print('r0_3_pre:',r0_3)
-    r0_3 = r0_3.evalf(subs={q1: theta1, q2: theta2, q3: theta3})
 
-    #Calculate rotation from 3 to 6
-    #r3_6 = r0_3.inv("LU") * rotation_EE
-    print('r0_3:',r0_3)
-    print('transpose',r0_3.transpose())
-    print('ROT_EE:',rotation_EE)
-    r3_6 = r0_3.transpose() * rotation_EE
-    print('R3_6:',r3_6)
-    #print(simplify(r3_6))
+    R0_3 = T0_1[0:3,0:3] * T1_2[0:3,0:3] * T2_3[0:3,0:3]
+    print('R0_3_pre:',R0_3)
+    R0_3 = R0_3.evalf(subs={q1: theta1, q2:theta2, q3: theta3})
+    print('R0_3:',R0_3)
+    print('transpose:',R0_3.transpose())
+    print('ROT_EE:', ROT_EE)
+    R3_6 = R0_3.transpose() * ROT_EE
+    print('R3_6:',R3_6)
 
-    #Remaining Joint Angles
-    print('theta4_ang',r3_6[2,2], -r3_6[0,2])
-    theta4 = atan2(r3_6[2,2], -r3_6[0,2])
-    theta5 = atan2(sqrt(r3_6[0,2] * r3_6[0,2] + r3_6[2,2] * r3_6[2,2]), r3_6[1,2])
-    theta6 = atan2(-r3_6[1,1], r3_6[1,0])
-    
+    # Euler angles from rotation matrix
+    print('theta4_ang',R3_6[2,2], -R3_6[0,2])
+    theta4 = atan2(R3_6[2,2], -R3_6[0,2])
+    theta5 = atan2(sqrt(R3_6[0,2]*R3_6[0,2] + R3_6[2,2]*R3_6[2,2]), R3_6[1,2])
+    theta6 = atan2(-R3_6[1,1], R3_6[1,0]) 
+
+#    print 'theta 4, 5 and 6 calculated'
+
     print ('theta1:',theta1)
     print ('theta2:',theta2)
     print ('theta3:',theta3)
@@ -209,23 +229,29 @@ def test_code(test_case):
     print ('theta6:',theta6)
 
 
-    ## 
+
+    ##
     ########################################################################################
-    
+
     ########################################################################################
     ## For additional debugging add your forward kinematics here. Use your previously calculated thetas
     ## as the input and output the position of your end effector as your_ee = [x,y,z]
 
     ## (OPTIONAL) YOUR CODE HERE!
-    f_kin = T0_EE.evalf(subs={q1: theta1, q2: theta2, q3: theta3, q4: theta4, q5: theta5, q6: theta6})
+
+    FK = T0_EE.evalf(subs={q1: theta1, q2:theta2, q3:theta3, q4:theta4, q5:theta5, q6:theta6})
+
+    print 'forward kinematics applied'
 
     ## End your code input for forward kinematics here!
     ########################################################################################
 
     ## For error analysis please set the following variables of your WC location and EE location in the format of [x,y,z]
-    your_wc = [wrist_center[0],wrist_center[1],wrist_center[2]] # <--- Load your calculated WC
-    your_ee = [f_kin[0,3],f_kin[1,3],f_kin[2,3]] # <--- Load your calculated end effector value from your forward kinematics
+    your_wc = [WC[0], WC[1], WC[2]] # <--- Load your calculated WC values in this array
+    your_ee = [FK[0,3], FK[1,3], FK[2,3]] # <--- Load your calculated end effector value from your forward kinematics
     ########################################################################################
+
+    print 'your_wc and your_ee applied'
 
     ## Error analysis
     print ("\nTotal run time to calculate joint angles from pose is %04.4f seconds" % (time()-start_time))
@@ -265,10 +291,11 @@ def test_code(test_case):
         ee_y_e = abs(your_ee[1]-test_case[0][0][1])
         ee_z_e = abs(your_ee[2]-test_case[0][0][2])
         ee_offset = sqrt(ee_x_e**2 + ee_y_e**2 + ee_z_e**2)
-        print ("\nEnd effector error for x position is: %04.8f" % ee_x_e)
-        print ("End effector error for y position is: %04.8f" % ee_y_e)
-        print ("End effector error for z position is: %04.8f" % ee_z_e)
-        print ("Overall end effector offset is: %04.8f units \n" % ee_offset)
+	print ("\nEnd effector error for x position is: %04.8f" % ee_x_e)
+	print ("End effector error for y position is: %04.8f" % ee_y_e)
+	print ("End effector error for z position is: %04.8f" % ee_z_e)
+	print ("Overall end effector offset is: %04.8f units \n" % ee_offset)
+
 
 
 
