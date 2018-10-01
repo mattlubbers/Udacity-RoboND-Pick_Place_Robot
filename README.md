@@ -33,15 +33,13 @@ Links | alpha(i-1) | a(i-1) | d(i-1) | theta(i)
 
 And here's where you can draw out and show your math for the derivation of your theta angles. 
 
-![alt text][image2]
+
 
 ### Project Implementation
-
-#### 1. Fill in the `IK_server.py` file with properly commented python code for calculating Inverse Kinematics based on previously performed Kinematic Analysis. Your code must guide the robot to successfully complete 8/10 pick and place cycles. Briefly discuss the code you implemented and your results. 
+**DH Parameter Definition**
 ```
-        ### Your FK code here
         #DH Param
-	#offset
+	    #offset
     	d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
     	#length
     	a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
@@ -50,16 +48,19 @@ And here's where you can draw out and show your math for the derivation of your 
     	#Joints
     	q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
 ```
+**Transform Matrix:**
 ```
     	def TF_Matrix(alpha, a, d, q):
-		TF = Matrix([
+	    	TF = Matrix([
 			[           cos(q),           -sin(q),           0,             a],
 			[sin(q)*cos(alpha), cos(q)*cos(alpha), -sin(alpha), -sin(alpha)*d],
 			[sin(q)*sin(alpha), cos(q)*sin(alpha),  cos(alpha),  cos(alpha)*d],
 			[                0,                 0,           0,             1]
 		    	])
 		return TF
- 
+ ```
+ **Call TF_Matrix function to calculate link Transforms:**
+ ```
         T0_1 = TF_Matrix(alpha0, a0, d1, q1).subs(DH)
         T1_2 = TF_Matrix(alpha1, a1, d2, q2).subs(DH)
         T2_3 = TF_Matrix(alpha2, a2, d3, q3).subs(DH)
@@ -68,11 +69,12 @@ And here's where you can draw out and show your math for the derivation of your 
         T5_6 = TF_Matrix(alpha5, a5, d6, q6).subs(DH)
         T6_EE = TF_Matrix(alpha6, a6, d7, q7).subs(DH)
 	print('Transforms Calculated')
-
-        #Transformation Matrix from Base Link to End Effector
+```
+**Transformation Matrix from Base Link to End Effector**
+```
         T0_EE = simplify(T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_EE)
 ```
-
+**Roll, Pitch, and Yaw Rotation Calculation**
 ```
 	# Compensate for rotation discrepancy between DH parameters and Gazebo
 	r, p, y = symbols('r p y')	
@@ -96,7 +98,7 @@ And here's where you can draw out and show your math for the derivation of your 
                          [     0,       0, 1]
                        ])
 ```
-
+**Rotation and Rotation Error at the End Effector**
 ```
 #Rotation End Effector
     	rotation_EE = rotation_z * rotation_y * rotation_x
@@ -104,21 +106,17 @@ And here's where you can draw out and show your math for the derivation of your 
     	rotation_EE = rotation_EE * rotation_error
         print('Calculated Rotation EE')
 ```
-
+**Extract Current Pose and Orientation of the End Effector**
 ```
        # Initialize service response
         joint_trajectory_list = []
         for x in xrange(0, len(req.poses)):
-            print('Start of loop')
-	    # IK code starts here
             joint_trajectory_point = JointTrajectoryPoint()
 
-	    # Extract end-effector position and orientation from request
-	    # px,py,pz = end-effector position
-	    # roll, pitch, yaw = end-effector orientation
+	        # Extract end-effector position and orientation from request
      	    pose_x = req.poses[x].position.x
     	    pose_y = req.poses[x].position.y
-	    pose_z = req.poses[x].position.z
+	        pose_z = req.poses[x].position.z
 
     	    #End Effector Orientation
     	    (roll, pitch, yaw) = tf.transformations.euler_from_quaternion([
@@ -129,12 +127,16 @@ And here's where you can draw out and show your math for the derivation of your 
 								])
 	    
     	    rotation_EE = rotation_EE.subs({'r': roll, 'p': pitch, 'y': yaw})
-	    
+```
+**Apply End Effector Matrix and Calculate Wrist Center**
+```
     	    #End Effector Matrix
     	    EE_matrix = Matrix([[pose_x], [pose_y], [pose_z]])
     	    wrist_center = EE_matrix - (0.303) * rotation_EE[:,2]
-	    
-	    # Calculate joint angles using Geometric IK method
+```
+**Calculate Joint Angles (delta between current and desired)**
+```
+	        # Calculate joint angles using Geometric IK method
     	    s_a = 1.501
     	    s_b = sqrt(pow((sqrt(wrist_center[0] * wrist_center[0] + wrist_center[1] * wrist_center[1]) - 0.35),2)
 		 + pow((wrist_center[2] - 0.75),2))
@@ -144,36 +146,46 @@ And here's where you can draw out and show your math for the derivation of your 
     	    a_a = acos((s_b * s_b + s_c * s_c - s_a * s_a) / (2 * s_b * s_c))
     	    a_b = acos((s_a * s_a + s_c * s_c - s_b * s_b) / (2 * s_a * s_c))
     	    a_c = acos((s_a * s_a + s_b * s_b - s_c * s_c) / (2 * s_a * s_b))
-
+```
+**Calculate Rotation from Theta 1 - 3**
+```
     	    #Joint Angles
     	    theta1 = atan2(wrist_center[1], wrist_center[0])
     	    theta2 = pi / 2 - a_a - atan2(wrist_center[2] - 0.75, sqrt(wrist_center[0] * wrist_center[0] +
                                                                 wrist_center[1] * wrist_center[1]) - 0.35)
     	    theta3 = pi /2 - (a_b + 0.036)
-
-    	    #Calculate rotation from 0 to 3
+```
+**Calculate Rotation from Joint 0 to 3**
+```
     	    r0_3 = T0_1[0:3,0:3] * T1_2[0:3,0:3] * T2_3[0:3,0:3]
             r0_3 = r0_3.evalf(subs={q1: theta1, q2: theta2, q3: theta3})
-
+```
+**Calculate Rotation from Joint 3 to 6**
+```
     	    #Calculate rotation from 3 to 6
     	    #r3_6 = r0_3.inv("LU") * rotation_EE
     	    r3_6 = r0_3.transpose() * rotation_EE
     	    #print(simplify(r3_6))
-
+```
+**Calculate Theta Angles 4 - 6**
+```
     	    #Remaining Joint Angles
     	    theta4 = atan2(r3_6[2,2], -r3_6[0,2])
     	    theta5 = atan2(sqrt(r3_6[0,2] * r3_6[0,2] + r3_6[2,2] * r3_6[2,2]), r3_6[1,2])
     	    theta6 = atan2(-r3_6[1,1], r3_6[1,0])
-
+```
+**Append Joint Trajectory Points**
+```
             # Populate response for the IK request
-            # In the next line replace theta1,theta2...,theta6 by your joint angle variables
-	    joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
-	    joint_trajectory_list.append(joint_trajectory_point)
-
+	        joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
+	        joint_trajectory_list.append(joint_trajectory_point)
+```
+**Return the Joint Trajectory List**
+```
         rospy.loginfo("length of Joint Trajectory List: %s" % len(joint_trajectory_list))
         return CalculateIKResponse(joint_trajectory_list)
 ```
-Define 
+**Run Main** 
 ```
 def IK_server():
     # initialize node and declare calculate_ik service
@@ -182,7 +194,8 @@ def IK_server():
     print "Ready to receive an IK request"
     rospy.spin()
 ```
-
+### Conclusion and Future Enhancements
+- 
 
 
 
