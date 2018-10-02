@@ -16,7 +16,7 @@ We will be using the Kuka KR210 for this project in a simulated environment to p
 
 Before we begin with the implementation of this project, we need to perform the Forward Kinematic Analysis of the Kuka KR210 robot arm by referencing the Kuka URDF for the relationship between the joint links:
 
-![KukaURDF](/assets/KukaURDF.png)
+![KukaURDF](/assets/KukaURDF.PNG)
 
 #### DH Parameter Tables
 Now that we have analyzed the URDF for the Forward Kinematics, we can construct the Denavit-Hartenberg Parameters for the Kuka KR210 are as follows:
