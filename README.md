@@ -10,7 +10,7 @@
 
 ---
 ### Kinematic Analysis of Kuka KR210 Robot
-We will be using the Kuka KR210 for this project in a simulated environment to perform the task of calculating necessary joint movement to allow the gripper to pick an item from the shelf, and successful drop the item into the desired storage bin. A representative image of this task is shown below:
+We will be using the Kuka KR210 for this project in a simulated environment to perform the task of calculating necessary joint movement to allow the gripper to pick an item from the shelf, and successfully placing the item into the desired storage bin. A representative image of this task is shown below:
 
 ![PickPlaceRobot](/assets/PickPlaceRobot.png)
 
@@ -44,6 +44,7 @@ The DH parameter table is now implemented:
              }
 ```
 **Transform Matrix:**
+
 With the DH parameters defined, next we can identify the homogeneous transform from the i-1 to i frame. This will consist of:
 - Four Transformations
 - Two Rotations
@@ -60,6 +61,7 @@ With the DH parameters defined, next we can identify the homogeneous transform f
 		return TF
  ```
  **Call TF_Matrix function to calculate link Transforms:**
+ 
  We now call the defined function to create the link-link transforms for each adjacent link ranging from the base (T0_1) to the End Effector (T6_EE):
  ```
         T0_1 = TF_Matrix(alpha0, a0, d1, q1).subs(DH)
@@ -72,6 +74,7 @@ With the DH parameters defined, next we can identify the homogeneous transform f
 	print('Transforms Calculated')
 ```
 **Transformation Matrix from Base Link to End Effector**
+
 We can now multiply all link to link transforms to calculate a single transform that represents the robot base all the way to the gripper!
 ```
         T0_EE = simplify(T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_EE)
@@ -104,6 +107,7 @@ We begin solving the Inverse Position Kinematics by calculating the rotation err
                        ])
 ```
 **Rotation and Rotation Error at the End Effector**
+
 Now that these matricies have been defined, we call the functions to calculate the Rotation Error for the gripper:
 ```
 #Rotation End Effector
@@ -112,6 +116,7 @@ Now that these matricies have been defined, we call the functions to calculate t
     	rotation_EE = rotation_EE * rotation_error
 ```
 **Theta Angle Calculations**
+
 Next, we will begin the process of calculating the theta angles through 4 key steps:
 
 > 1.) Calculate **Theta 1** and **r**
@@ -133,19 +138,21 @@ The calculation for the theta 1 and r values can be found equations below:
 
 ![thetaOne_radius_calc](/assets/thetaOne_radius_calc.PNG)
 
+This is implemented as:
+
 ```
     	    theta1 = atan2(wrist_center[1], wrist_center[0])
 ```
 
 **2.) Lengths of the triangle between Joint 2, Joint 3, and the Wrist Center (A, B, C):**
 
-Let's label each of the sides, side A and C are already of known length:
+Let's label each of the sides of the triangle, side A and C are already of known length:
 
 ![triangle_sides](/assets/triangle_sides.PNG)
 
-If 2 of the 3 sides are of known length, we can calculate the length of side b through the Law of Cosines SSS (3 Sides) as can be found from the reference [here](http://2000clicks.com/mathhelp/geometrylawofsines.aspx).
+If 2 of the 3 sides are of known length, we can calculate the length of side B through the Law of Cosines SSS (3 Sides) as can be found from the reference [here](http://2000clicks.com/mathhelp/geometrylawofsines.aspx).
 
-This can be broken into 3 separate equations which are color coded for reference to indicate how they are used within the calculation for the length of side b:
+This can be broken into 3 separate equations which are color coded for reference to indicate how they are used within the calculation for the length of side B:
 
 ![side_b_calc](/assets/side_b_calc.PNG)
 
