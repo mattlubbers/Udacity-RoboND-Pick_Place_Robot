@@ -61,6 +61,10 @@ With the DH parameters defined, next we can identify the homogeneous transform f
 		return TF
  ```
  **Call TF_Matrix function to calculate link Transforms:**
+![IndividualLinkTf](/assets/IndividualLinkTf.PNG)
+ 
+ 
+ 
  
  We now call the defined function to create the link-link transforms for each adjacent link ranging from the base (T0_1) to the End Effector (T6_EE):
  ```
