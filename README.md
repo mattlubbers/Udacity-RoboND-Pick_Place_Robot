@@ -30,10 +30,33 @@ Links | alpha(i-1) | a(i-1) | d(i-1) | theta(i)
 
 
 #### 3. Decouple Inverse Kinematics problem into Inverse Position Kinematics and inverse Orientation Kinematics
+Wrist Center
 
-And here's where you can draw out and show your math for the derivation of your theta angles. 
+![Wrist_Center](/assets/WristCenter.png)
 
+first define theta 1:
 
+![thetaOne_radius_calc](/assets/thetaOne_radius_calc.PNG)
+
+Triange Side diagram:
+
+![triangle_sides](/assets/triangle_sides.PNG)
+
+Now calc triange side b:
+
+![side_b_calc](/assets/side_b_calc.PNG)
+
+Move to angles:
+
+![theta_diagram](/assets/theta_diagram.PNG)
+
+angle calcs:
+
+![angle_calcs](/assets/angle_calcs.PNG)
+
+finally theta 2 and theta 3 calc:
+
+![thetaTwo_thetaThree_calc](/assets/thetaTwo_thetaThree_calc.PNG)
 
 #### 4. Project Implementation
 **DH Parameter Definition**
