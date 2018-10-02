@@ -1,7 +1,7 @@
 ## Project: Kinematics Pick & Place
 **Steps to complete the project:**  
 
-1. Set up your ROS Workspace.
+1. Set up ROS Workspace.
 2. Download or clone the [project repository](https://github.com/udacity/RoboND-Kinematics-Project) into the ***src*** directory of your ROS Workspace.  
 3. Experiment with the forward_kinematics environment and get familiar with the robot.
 4. Launch in [demo mode](https://classroom.udacity.com/nanodegrees/nd209/parts/7b2fd2d7-e181-401e-977a-6158c77bf816/modules/8855de3f-2897-46c3-a805-628b5ecf045b/lessons/91d017b1-4493-4522-ad52-04a74a01094c/concepts/ae64bb91-e8c4-44c9-adbe-798e8f688193).
@@ -10,12 +10,16 @@
 
 ---
 ### Kinematic Analysis of Kuka KR210 Robot
-Here is an example of how to include an image in your writeup.
+We will be using the Kuka KR210 for this project in a simulated environment to perform the task of calculating necessary joint movement to allow the gripper to pick an item from the shelf, and successful drop the item into the desired storage bin. A representative image of this task is shown below:
 
-![alt text][image1]
+![PickPlaceRobot](/assets/PickPlaceRobot.png)
+
+Before we begin with the implementation of this project, we need to perform the Forward Kinematic Analysis of the Kuka KR210 robot arm by referencing the Kuka URDF for the relationship between the joint links:
+
+![KukaURDF](/assets/KukaURDF.png)
 
 #### DH Parameter Tables
-The Denavit-Hartenberg Parameters for the Kuka KR210 are as follows:
+Now that we have analyzed the URDF for the Forward Kinematics, we can construct the Denavit-Hartenberg Parameters for the Kuka KR210 are as follows:
 
 Links | alpha(i-1) | a(i-1) | d(i-1) | theta(i)
 --- | --- | --- | --- | ---
