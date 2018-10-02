@@ -9,14 +9,13 @@
 6. Fill in the `IK_server.py` with your Inverse Kinematics code. 
 
 ---
-### Kinematic Analysis
-#### 1. Kinematic Analysis of Kuka KR210 Robot
-
+### Kinematic Analysis of Kuka KR210 Robot
 Here is an example of how to include an image in your writeup.
 
 ![alt text][image1]
 
-#### 2. Individual transformation matrices about each joint. In addition, also generate a generalized homogeneous transform between base_link and gripper_link using only end-effector(gripper) pose.
+#### DH Parameter Tables
+The Denavit-Hartenberg Parameters for the Kuka KR210 are as follows:
 
 Links | alpha(i-1) | a(i-1) | d(i-1) | theta(i)
 --- | --- | --- | --- | ---
@@ -28,71 +27,24 @@ Links | alpha(i-1) | a(i-1) | d(i-1) | theta(i)
 5->6 | - pi/2 | 0 | 0 | q6
 6->EE | 0 | 0 | 0.303 | 0
 
-
-#### 3. Inverse Position Kinematics
-To calculate the theta angles there are 4 key steps that need to be defined:
-
-> 3.1) Calculate **Theta 1** and **r**
-
-> 3.2) Lengths of the triangle between Joint 2, Joint 3, and the Wrist Center (**A**, **B**, **C**)
-
-> 3.3) Angles of the triangle between Joint 2, Joint 3, and the Wrist Center (**a**, **b**, **c**)
-
-> 3.4) Calculate **Theta 2** and **Theta 4**
-
-
-**3.1 Calculate Theta 1 and r**
-
-First we start by calculating the theta 0 value as well as the r value from the diagram below:
-
-![Wrist_Center](/assets/WristCenter.png)
-
-The calculation for the theta 1 and r values can be found equations below:
-
-![thetaOne_radius_calc](/assets/thetaOne_radius_calc.PNG)
-
-**3.2) Lengths of the triangle between Joint 2, Joint 3, and the Wrist Center (A, B, C):**
-
-Let's label each of the sides, side A and C are already of known length:
-
-![triangle_sides](/assets/triangle_sides.PNG)
-
-If 2 of the 3 sides are of known length, we can calculate the length of side b through the Law of Cosines SSS (3 Sides) as can be found from the reference [here](http://2000clicks.com/mathhelp/geometrylawofsines.aspx).
-
-This can be broken into 3 separate equations which are color coded for reference to indicate how they are used within the calculation for the length of side b:
-
-![side_b_calc](/assets/side_b_calc.PNG)
-
-**3.3) Angles of the triangle between Joint 2, Joint 3, and the Wrist Center (a, b, c)**
-
-After the calculation of the side lengths, we can now proceed to calculate the angles of the triangle seen below as **a**, **b**, and **c**:
-
-![theta_diagram](/assets/theta_diagram.PNG)
-
-These are also simple trigonometry equations using acos of the relationship between the triangle side lengths:
-
-![angle_calcs](/assets/angle_calcs.PNG)
-
-**3.4) Calculate Theta 2 and Theta 4**
-
-Now that we have the triangle angles, we can finally calculate theta 2 and theta 3!
-
-![thetaTwo_thetaThree_calc](/assets/thetaTwo_thetaThree_calc.PNG)
-
-#### 4. Project Implementation
-**DH Parameter Definition**
+The DH parameter table is now implemented:
 ```
-        #DH Param
-	    #offset
-    	d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
-    	#length
-    	a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
-    	#twist
-    	alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7')
-    	#Joints
-    	q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
+    	DH = { 
+		        alpha0:    0,  a0:     0, d1: 0.75, q1:          q1,
+		        alpha1:-pi/2., a1:  0.35, d2:    0, q2: -pi/2. + q2,
+		        alpha2:    0,  a2:  1.25, d3:    0, q3:          q3,
+		         alpha3:-pi/2., a3:-0.054, d4:  1.5, q4:          q4,
+		        alpha4: pi/2,  a4:     0, d5:    0, q5:          q5,
+		        alpha5:-pi/2., a5:     0, d6:    0, q6:          q6,
+		        alpha6:    0,  a6:     0, d7:0.303, q7:           0
+             }
 ```
 **Transform Matrix:**
+With the DH parameters defined, next we can identify the homogeneous transform from the i-1 to i frame. This will consist of:
+- Four Transformations
+- Two Rotations
+- Two Translations
+
 ```
     	def TF_Matrix(alpha, a, d, q):
 	    	TF = Matrix([
@@ -104,6 +56,7 @@ Now that we have the triangle angles, we can finally calculate theta 2 and theta
 		return TF
  ```
  **Call TF_Matrix function to calculate link Transforms:**
+ We now call the defined function to create the link-link transforms for each adjacent link ranging from the base (T0_1) to the End Effector (T6_EE):
  ```
         T0_1 = TF_Matrix(alpha0, a0, d1, q1).subs(DH)
         T1_2 = TF_Matrix(alpha1, a1, d2, q2).subs(DH)
@@ -115,9 +68,13 @@ Now that we have the triangle angles, we can finally calculate theta 2 and theta
 	print('Transforms Calculated')
 ```
 **Transformation Matrix from Base Link to End Effector**
+We can now multiply all link to link transforms to calculate a single transform that represents the robot base all the way to the gripper!
 ```
         T0_EE = simplify(T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_EE)
 ```
+### Inverse Position Kinematics
+We begin solving the Inverse Position Kinematics by calculating the rotation error between the DH parameters and the URDF. To do this, we must first define the corresponding matricies for rotation of Roll, Yaw, and Pitch:
+
 **Roll, Pitch, and Yaw Rotation Calculation**
 ```
 	# Compensate for rotation discrepancy between DH parameters and Gazebo
@@ -143,13 +100,66 @@ Now that we have the triangle angles, we can finally calculate theta 2 and theta
                        ])
 ```
 **Rotation and Rotation Error at the End Effector**
+Now that these matricies have been defined, we call the functions to calculate the Rotation Error for the gripper:
 ```
 #Rotation End Effector
     	rotation_EE = rotation_z * rotation_y * rotation_x
     	rotation_error = rotation_z.subs(y, radians(180)) * rotation_y.subs(p, radians(-90))
     	rotation_EE = rotation_EE * rotation_error
-        print('Calculated Rotation EE')
 ```
+**Theta Angle Calculations**
+Next, we will begin the process of calculating the theta angles through 4 key steps:
+
+> 1.) Calculate **Theta 1** and **r**
+
+> 2.) Lengths of the triangle between Joint 2, Joint 3, and the Wrist Center (**A**, **B**, **C**)
+
+> 3.) Angles of the triangle between Joint 2, Joint 3, and the Wrist Center (**a**, **b**, **c**)
+
+> 4.) Calculate **Theta 2** and **Theta 4**
+
+
+**1.) Calculate Theta 1 and r**
+
+First we start by calculating the theta 0 value as well as the r value from the diagram below:
+
+![Wrist_Center](/assets/WristCenter.png)
+
+The calculation for the theta 1 and r values can be found equations below:
+
+![thetaOne_radius_calc](/assets/thetaOne_radius_calc.PNG)
+
+**2.) Lengths of the triangle between Joint 2, Joint 3, and the Wrist Center (A, B, C):**
+
+Let's label each of the sides, side A and C are already of known length:
+
+![triangle_sides](/assets/triangle_sides.PNG)
+
+If 2 of the 3 sides are of known length, we can calculate the length of side b through the Law of Cosines SSS (3 Sides) as can be found from the reference [here](http://2000clicks.com/mathhelp/geometrylawofsines.aspx).
+
+This can be broken into 3 separate equations which are color coded for reference to indicate how they are used within the calculation for the length of side b:
+
+![side_b_calc](/assets/side_b_calc.PNG)
+
+**3.) Angles of the triangle between Joint 2, Joint 3, and the Wrist Center (a, b, c)**
+
+After the calculation of the side lengths, we can now proceed to calculate the angles of the triangle seen below as **a**, **b**, and **c**:
+
+![theta_diagram](/assets/theta_diagram.PNG)
+
+These are also simple trigonometry equations using acos of the relationship between the triangle side lengths:
+
+![angle_calcs](/assets/angle_calcs.PNG)
+
+**4.) Calculate Theta 2 and Theta 4**
+
+Now that we have the triangle angles, we can finally calculate theta 2 and theta 3!
+
+![thetaTwo_thetaThree_calc](/assets/thetaTwo_thetaThree_calc.PNG)
+
+### Inverse Orientation Kinematics
+Now that the Inverse Position Kinematics are defined, we need to define the Inverse Orientation Kinematics
+
 **Extract Current Pose and Orientation of the End Effector**
 ```
        # Initialize service response
