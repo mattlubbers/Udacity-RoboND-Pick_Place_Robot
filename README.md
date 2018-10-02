@@ -207,6 +207,7 @@ Now that the Inverse Position Kinematics are defined, we need to define the Inve
     	    rotation_EE = rotation_EE.subs({'r': roll, 'p': pitch, 'y': yaw})
 ```
 **Apply End Effector Matrix and Calculate Wrist Center**
+
 Calculate the Wrist Center from the End Effector matrix and the gripper offset of 0.303 meters:
 ```
     	    #End Effector Matrix
@@ -229,6 +230,7 @@ Calculate the Wrist Center from the End Effector matrix and the gripper offset o
     	    theta6 = atan2(-r3_6[1,1], r3_6[1,0])
 ```
 **Append Joint Trajectory Points**
+
 Now that we've done all the difficult work of calculating our theta values, we need to add them to a list for use in the pick and place functionality!
 ```
             # Populate response for the IK request
@@ -236,6 +238,7 @@ Now that we've done all the difficult work of calculating our theta values, we n
 	        joint_trajectory_list.append(joint_trajectory_point)
 ```
 **Run Main** 
+
 Finally, let's write the init main to continue running through the program and making all of the appropriate function calls:
 ```
 def IK_server():
@@ -246,7 +249,18 @@ def IK_server():
     rospy.spin()
 ```
 ### Conclusion and Future Enhancements
-- 
+This project was very intensive and helped provide a practical approach to the design, implementation, and testing of a real robot that exists throughout the industry!
+
+While the Kinematic calculations were necessary to really understand how the robot motion is defined, I would imagine that there are modeling tools that exist in the industry that do the busy work, and allow the Engineer to focus on other aspects of the design such as controls and communication protocol. It would have been interesting to explore these tools, as well as dive a bit deeper on the specific controls interface for this robot arm application.
+
+Things that could be future enhancements to this base project could include:
+- Variation of retrieval object size
+- Difficult pick locations with barriers that require specific routing
+- Pick locations that are not arranged in a symmetric grid
+- Multiple placement locations
+- More precise placement location requirements (often we will not be able to drop into a large bin)
+- Optimization for speed of processing (pick and place seemed slow compared to manufacturing use-cases)
+
 
 
 
