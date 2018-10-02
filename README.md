@@ -29,32 +29,44 @@ Links | alpha(i-1) | a(i-1) | d(i-1) | theta(i)
 6->EE | 0 | 0 | 0.303 | 0
 
 
-#### 3. Decouple Inverse Kinematics problem into Inverse Position Kinematics and inverse Orientation Kinematics
-Wrist Center
+#### 3. Inverse Position Kinematics
+To calculate the theta angles there are 4 key steps that need to be defined:
+> 3.1) Calculate **Theta 1** and **r**
+> 3.2) Lengths of the triangle between Joint 2, Joint 3, and the Wrist Center (**A**, **B**, **C**)
+> 3.3) Angles of the triangle between Joint 2, Joint 3, and the Wrist Center (**a**, **b**, **c**)
+> 3.4) Calculate **Theta 2** and **Theta 4**
+
+**3.1 Calculate Theta 1 and r**
+First we start by calculating the theta value between joint 0 and 1 as well as the r value from the diagram below:
 
 ![Wrist_Center](/assets/WristCenter.png)
 
-first define theta 1:
+The calculation for the theta 1 and r values can be found equations below:
 
 ![thetaOne_radius_calc](/assets/thetaOne_radius_calc.PNG)
 
-Triange Side diagram:
+**3.2) Lengths of the triangle between Joint 2, Joint 3, and the Wrist Center (A, B, C):**
+Let's label each of the sides, side A and C are already of known length:
 
 ![triangle_sides](/assets/triangle_sides.PNG)
 
-Now calc triange side b:
+If 2 of the 3 sides are of known length, we can calculate the length of side b through the Law of Cosines SSS (3 Sides) as can be found from the reference [here](http://2000clicks.com/mathhelp/geometrylawofsines.aspx).
+
+This can be broken into 3 separate equations which are color coded for reference to indicate how they are used within the calculation for the length of side b:
 
 ![side_b_calc](/assets/side_b_calc.PNG)
 
-Move to angles:
+**3.3) Angles of the triangle between Joint 2, Joint 3, and the Wrist Center (a, b, c)**
+After the calculation of the side lengths, we can now proceed to calculate the angles of the triangle seen below as **a**, **b**, and **c**:
 
 ![theta_diagram](/assets/theta_diagram.PNG)
 
-angle calcs:
+These are also simple trigonometry equations using acos of the relationship between the triangle side lengths:
 
 ![angle_calcs](/assets/angle_calcs.PNG)
 
-finally theta 2 and theta 3 calc:
+**3.4) Calculate Theta 2 and Theta 4**
+Now that we have the triangle angles, we can finally calculate theta 2 and theta 3!
 
 ![thetaTwo_thetaThree_calc](/assets/thetaTwo_thetaThree_calc.PNG)
 
