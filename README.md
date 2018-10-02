@@ -33,13 +33,13 @@ Links | alpha(i-1) | a(i-1) | d(i-1) | theta(i)
 To calculate the theta angles there are 4 key steps that need to be defined:
 
 > 3.1) Calculate **Theta 1** and **r**
-> 3.2) Lengths of the triangle between Joint 2, Joint 3, and the Wrist Center (**A**, **B**, **C**)
-> 3.3) Angles of the triangle between Joint 2, Joint 3, and the Wrist Center (**a**, **b**, **c**)
-> 3.4) Calculate **Theta 2** and **Theta 4**
+3.2) Lengths of the triangle between Joint 2, Joint 3, and the Wrist Center (**A**, **B**, **C**)
+3.3) Angles of the triangle between Joint 2, Joint 3, and the Wrist Center (**a**, **b**, **c**)
+3.4) Calculate **Theta 2** and **Theta 4**
 
 **3.1 Calculate Theta 1 and r**
 
-First we start by calculating the theta value between joint 0 and 1 as well as the r value from the diagram below:
+First we start by calculating the theta 0 value as well as the r value from the diagram below:
 
 ![Wrist_Center](/assets/WristCenter.png)
 
