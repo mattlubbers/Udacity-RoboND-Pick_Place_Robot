@@ -129,6 +129,10 @@ The calculation for the theta 1 and r values can be found equations below:
 
 ![thetaOne_radius_calc](/assets/thetaOne_radius_calc.PNG)
 
+```
+    	    theta1 = atan2(wrist_center[1], wrist_center[0])
+```
+
 **2.) Lengths of the triangle between Joint 2, Joint 3, and the Wrist Center (A, B, C):**
 
 Let's label each of the sides, side A and C are already of known length:
@@ -141,6 +145,13 @@ This can be broken into 3 separate equations which are color coded for reference
 
 ![side_b_calc](/assets/side_b_calc.PNG)
 
+```
+	        # Calculate joint angles using Geometric IK method
+    	    s_a = 1.501
+    	    s_b = sqrt(pow((sqrt(wrist_center[0] * wrist_center[0] + wrist_center[1] * wrist_center[1]) - 0.35),2)
+		 + pow((wrist_center[2] - 0.75),2))
+    	    s_c = 1.25
+```
 **3.) Angles of the triangle between Joint 2, Joint 3, and the Wrist Center (a, b, c)**
 
 After the calculation of the side lengths, we can now proceed to calculate the angles of the triangle seen below as **a**, **b**, and **c**:
@@ -151,16 +162,27 @@ These are also simple trigonometry equations using acos of the relationship betw
 
 ![angle_calcs](/assets/angle_calcs.PNG)
 
+```
+    	    #Angles
+    	    a_a = acos((s_b * s_b + s_c * s_c - s_a * s_a) / (2 * s_b * s_c))
+    	    a_b = acos((s_a * s_a + s_c * s_c - s_b * s_b) / (2 * s_a * s_c))
+    	    a_c = acos((s_a * s_a + s_b * s_b - s_c * s_c) / (2 * s_a * s_b))
+```
 **4.) Calculate Theta 2 and Theta 4**
 
 Now that we have the triangle angles, we can finally calculate theta 2 and theta 3!
 
 ![thetaTwo_thetaThree_calc](/assets/thetaTwo_thetaThree_calc.PNG)
 
+```
+    	    #Theta 2 and 3
+    	    theta2 = pi / 2 - a_a - atan2(wrist_center[2] - 0.75, sqrt(wrist_center[0] * wrist_center[0] +
+                                                                wrist_center[1] * wrist_center[1]) - 0.35)
+    	    theta3 = pi /2 - (a_b + 0.036)
+```
 ### Inverse Orientation Kinematics
-Now that the Inverse Position Kinematics are defined, we need to define the Inverse Orientation Kinematics
+Now that the Inverse Position Kinematics are defined, we need to define the Inverse Orientation Kinematics by calculating the orientations of the gripper by extracting the pose:  
 
-**Extract Current Pose and Orientation of the End Effector**
 ```
        # Initialize service response
         joint_trajectory_list = []
@@ -179,44 +201,22 @@ Now that the Inverse Position Kinematics are defined, we need to define the Inve
 								req.poses[x].orientation.z,
 								req.poses[x].orientation.w
 								])
-	    
+```
+**Calculate the Final Rotation at the End Effector**
+```
     	    rotation_EE = rotation_EE.subs({'r': roll, 'p': pitch, 'y': yaw})
 ```
 **Apply End Effector Matrix and Calculate Wrist Center**
+Calculate the Wrist Center from the End Effector matrix and the gripper offset of 0.303 meters:
 ```
     	    #End Effector Matrix
     	    EE_matrix = Matrix([[pose_x], [pose_y], [pose_z]])
     	    wrist_center = EE_matrix - (0.303) * rotation_EE[:,2]
 ```
-**Calculate Joint Angles (delta between current and desired)**
-```
-	        # Calculate joint angles using Geometric IK method
-    	    s_a = 1.501
-    	    s_b = sqrt(pow((sqrt(wrist_center[0] * wrist_center[0] + wrist_center[1] * wrist_center[1]) - 0.35),2)
-		 + pow((wrist_center[2] - 0.75),2))
-    	    s_c = 1.25
-
-    	    #Angles
-    	    a_a = acos((s_b * s_b + s_c * s_c - s_a * s_a) / (2 * s_b * s_c))
-    	    a_b = acos((s_a * s_a + s_c * s_c - s_b * s_b) / (2 * s_a * s_c))
-    	    a_c = acos((s_a * s_a + s_b * s_b - s_c * s_c) / (2 * s_a * s_b))
-```
-**Calculate Rotation from Theta 1 - 3**
-```
-    	    #Joint Angles
-    	    theta1 = atan2(wrist_center[1], wrist_center[0])
-    	    theta2 = pi / 2 - a_a - atan2(wrist_center[2] - 0.75, sqrt(wrist_center[0] * wrist_center[0] +
-                                                                wrist_center[1] * wrist_center[1]) - 0.35)
-    	    theta3 = pi /2 - (a_b + 0.036)
-```
-**Calculate Rotation from Joint 0 to 3**
+**Calculate Euler angles through link Transforms**
 ```
     	    r0_3 = T0_1[0:3,0:3] * T1_2[0:3,0:3] * T2_3[0:3,0:3]
             r0_3 = r0_3.evalf(subs={q1: theta1, q2: theta2, q3: theta3})
-```
-**Calculate Rotation from Joint 3 to 6**
-```
-    	    #Calculate rotation from 3 to 6
     	    #r3_6 = r0_3.inv("LU") * rotation_EE
     	    r3_6 = r0_3.transpose() * rotation_EE
     	    #print(simplify(r3_6))
@@ -229,17 +229,14 @@ Now that the Inverse Position Kinematics are defined, we need to define the Inve
     	    theta6 = atan2(-r3_6[1,1], r3_6[1,0])
 ```
 **Append Joint Trajectory Points**
+Now that we've done all the difficult work of calculating our theta values, we need to add them to a list for use in the pick and place functionality!
 ```
             # Populate response for the IK request
 	        joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
 	        joint_trajectory_list.append(joint_trajectory_point)
 ```
-**Return the Joint Trajectory List**
-```
-        rospy.loginfo("length of Joint Trajectory List: %s" % len(joint_trajectory_list))
-        return CalculateIKResponse(joint_trajectory_list)
-```
 **Run Main** 
+Finally, let's write the init main to continue running through the program and making all of the appropriate function calls:
 ```
 def IK_server():
     # initialize node and declare calculate_ik service
